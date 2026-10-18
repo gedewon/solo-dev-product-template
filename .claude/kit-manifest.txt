@@ -40,6 +40,7 @@ replace .claude/kit-manifest.txt
 replace WORKFLOW.md
 replace docs/workflow/loop.html
 replace scripts/sync-kit.sh
+replace scripts/check-kit.mjs
 
 seed .claude/settings.json
 seed docs/agents/issue-tracker.md

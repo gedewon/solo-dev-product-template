@@ -77,6 +77,8 @@ cat <<'EOF'
 Setup complete. Next:
   1. Fill in the TODO(setup) sections in AGENTS.md: what the product is,
      its critical areas and invariants, and its critical journeys.
+     Replace README.md, and review LICENSE, CONTRIBUTING.md,
+     CODE_OF_CONDUCT.md and SECURITY.md, which describe the template.
   2. Commit pnpm-lock.yaml with the rest and push:
      git add -A && git commit -m "chore: set up project" && git push
   3. In Claude Code, run /setup-observability to add Sentry and PostHog,

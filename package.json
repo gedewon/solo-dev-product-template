@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "check:kit": "node scripts/check-kit.mjs",
+    "check": "pnpm check:kit && pnpm typecheck && pnpm lint && pnpm test",
     "check:full": "pnpm check && pnpm build"
   },
   "dependencies": {
@@ -38,5 +39,10 @@
   "packageManager": "pnpm@10.24.0",
   "engines": {
     "node": ">=22"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gedewon/solo-dev-product-template.git"
   }
 }

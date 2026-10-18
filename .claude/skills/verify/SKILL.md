@@ -11,7 +11,7 @@ Prove the current state of the code with the project's own commands. Never claim
 
 Read the `scripts` in `package.json`. This template defines:
 
-- `pnpm check`: typecheck, lint, unit and integration tests
+- `pnpm check`: kit consistency, typecheck, lint, unit and integration tests
 - `pnpm check:full`: `check` plus the production build
 
 Use those. If the project has added more (`test:e2e`, `db:test`), run the ones relevant to the change. Only run commands that exist; never invent one.
