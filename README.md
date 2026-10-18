@@ -4,6 +4,11 @@ A Next.js starter with an AI development workflow built in. Claude Code shapes i
 
 `WORKFLOW.md` explains the day-to-day loop. This file covers setup and maintenance.
 
+## See the loop
+
+- **On GitHub:** the diagram at the top of [`WORKFLOW.md`](WORKFLOW.md#the-loop) shows every step, who acts and where work loops back.
+- **In 3D:** open [`docs/workflow/loop.html`](docs/workflow/loop.html) in a browser (download it or clone the repo, then double-click it). Follow one feature from idea to production and back, and click any step or tool for details.
+
 ## Start a new project
 
 1. On GitHub, click **Use this template** to create the new repo, then clone it.
@@ -25,7 +30,7 @@ A Next.js starter with an AI development workflow built in. Claude Code shapes i
 ```
 AGENTS.md                      shared instructions for every coding agent
 CLAUDE.md                      imports AGENTS.md, adds the Claude workflow
-WORKFLOW.md                    the human guide to the loop
+WORKFLOW.md                    the human guide to the loop, with a diagram
 .claude/
   skills/                      grill-with-docs, to-spec, to-tickets, implement, tdd,
                                verify, code-review, security, db-review, ship,
@@ -44,6 +49,7 @@ docs/
   agents/issue-tracker.md      how agents use GitHub Issues, and the label set
   analytics/tracking-plan.md   every analytics event and feature flag
   adr/                         decisions; two to start with
+  workflow/loop.html           the loop as an interactive 3D map
 scripts/
   setup.sh                     one-time project setup
   sync-kit.sh                  pull kit updates into a project

@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 3D map of the agent workflow. Open this file in a browser; it loads three.js from cdnjs. -->
+<style>
+:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; font: 14px system-ui, sans-serif; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+</style>
+<title>Solo Dev Product Loop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one-screen instrument. A 3D loop on a turntable fills the left; a
+   step sheet on the right explains whatever the packet is visiting. On phones
+   the stage stacks above the sheet and the page scrolls. */
+:root {
+  --bg: #e7ecf0;
+  --surface: #f8fafb;
+  --stage: #dde4ea;
+  --plinth: #c7d1da;
+  --ink: #17212c;
+  --muted: #566475;
+  --line: #c3cdd7;
+  --track: #8c9aab;
+  --you: #b96c08;
+  --agent: #157a80;
+  --tool: #5257c4;
+  --live: #2d8547;
+  --risk: #c13f33;
+  --packet: #17212c;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d131a; --surface: #141c26; --stage: #101820; --plinth: #233040;
+    --ink: #e5ecf2; --muted: #93a2b3; --line: #243242; --track: #44566a;
+    --you: #f2a541; --agent: #46c3c1; --tool: #9195f7; --live: #5fcb85;
+    --risk: #f2715f; --packet: #ffffff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d131a; --surface: #141c26; --stage: #101820; --plinth: #233040;
+  --ink: #e5ecf2; --muted: #93a2b3; --line: #243242; --track: #44566a;
+  --you: #f2a541; --agent: #46c3c1; --tool: #9195f7; --live: #5fcb85;
+  --risk: #f2715f; --packet: #ffffff; color-scheme: dark;
+}
+
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+* { box-sizing: border-box; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--agent); outline-offset: 2px; }
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  padding-block: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; }
+h1 { font: 700 clamp(22px, 3vw, 30px)/1.1 var(--display); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0; max-width: 62ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--c); }
+
+main { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 14px; min-height: 0; }
+
+.stage {
+  position: relative; min-height: 0; border-radius: 16px; overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 35%, var(--surface), var(--stage) 70%);
+  border: 1px solid var(--line);
+}
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.stage canvas.dragging { cursor: grabbing; }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+.lbl {
+  position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  padding: 3px 8px 3px 6px; border-radius: 999px; font-size: 12px; line-height: 1.3;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--line); color: var(--ink);
+  transition: border-color .2s, background .2s;
+}
+.lbl b { font-weight: 600; }
+.lbl code { font: 11px var(--mono); color: var(--muted); }
+.lbl.tool { border-style: dashed; }
+.lbl.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 16%, var(--surface)); }
+
+.controls {
+  position: absolute; left: 10px; right: 10px; bottom: 10px;
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center; pointer-events: none;
+}
+.controls > * { pointer-events: auto; }
+.btn, .tog {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 12px;
+  border-radius: 10px; border: 1px solid var(--line); cursor: pointer; font-size: 13px; font-weight: 500;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+.btn:hover, .tog:hover { border-color: var(--muted); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tog[aria-pressed="true"] { border-color: var(--risk); background: color-mix(in srgb, var(--risk) 14%, var(--surface)); }
+.tog .box { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--muted); display: grid; place-items: center; }
+.tog[aria-pressed="true"] .box { background: var(--risk); border-color: var(--risk); }
+.tog[aria-pressed="true"] .box::after { content: ""; width: 6px; height: 3px; border: solid var(--surface); border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
+.spacer { flex: 1; }
+.hint { font-size: 12px; color: var(--muted); padding: 4px 8px; border-radius: 8px; background: color-mix(in srgb, var(--surface) 80%, transparent); }
+
+.panel {
+  min-height: 0; overflow: auto; border-radius: 16px; border: 1px solid var(--line);
+  background: var(--surface); display: flex; flex-direction: column;
+}
+.sheet { padding: 18px 20px 16px; display: grid; gap: 12px; border-bottom: 1px solid var(--line); }
+.eyebrow { display: flex; justify-content: space-between; gap: 10px; font: 500 12px var(--mono); color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.eyebrow .phase { color: var(--c); }
+.sheet h2 { margin: 0; font: 700 26px/1.1 var(--display); letter-spacing: -0.01em; text-wrap: balance; }
+.cmd { font: 500 14px var(--mono); color: var(--agent); background: color-mix(in srgb, var(--agent) 10%, transparent); padding: 2px 8px; border-radius: 6px; justify-self: start; }
+.owners { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); }
+.chip .dot { width: 7px; height: 7px; }
+.what { margin: 0; max-width: 62ch; }
+.io { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 13.5px; margin: 0; }
+.io dt { color: var(--muted); font: 500 11.5px/1.9 var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+.io dd { margin: 0; min-width: 0; }
+.note { font-size: 13.5px; padding: 10px 12px; border-radius: 10px; border-left: 3px solid var(--c); background: color-mix(in srgb, var(--c) 9%, transparent); }
+.note strong { color: var(--c); }
+
+.steps { padding: 12px 12px 16px; display: grid; gap: 2px; }
+.steps h3 { margin: 10px 8px 4px; font: 500 11.5px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.step {
+  display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  text-align: left; width: 100%; padding: 7px 8px; border-radius: 9px; border: 1px solid transparent; background: none; cursor: pointer;
+}
+.step:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.step[aria-current="step"] { border-color: var(--line); background: color-mix(in srgb, var(--c) 10%, var(--surface)); }
+.step .n { font: 500 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.step .t { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.step code { font: 11.5px var(--mono); color: var(--muted); }
+
+.fallback { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); }
+
+@media (max-width: 900px) {
+  html, body { height: auto; }
+  .app { height: auto; }
+  main { grid-template-columns: minmax(0, 1fr); }
+  .stage { height: 64vh; min-height: 380px; }
+  .panel { overflow: visible; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .lbl { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div>
+      <h1>Solo Dev Product Loop</h1>
+      <p class="sub">How one feature travels through the template: from an idea, through agents that spec, build, verify and review it, to production, and back as signals and lessons.</p>
+    </div>
+    <div class="legend" aria-label="Legend">
+      <span><i class="dot" style="--c: var(--you)"></i>You decide</span>
+      <span><i class="dot" style="--c: var(--agent)"></i>Agent works</span>
+      <span><i class="dot" style="--c: var(--tool)"></i>Tool or service</span>
+      <span><i class="dot" style="--c: var(--live)"></i>Live product</span>
+      <span><i class="dot" style="--c: var(--risk)"></i>Problem or loop back</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="stage" id="stage" aria-label="3D view of the workflow loop">
+      <canvas id="gl" aria-hidden="true"></canvas>
+      <div class="labels" id="labels"></div>
+      <div class="controls">
+        <button class="btn" id="prev" type="button" aria-label="Previous step">◀ Prev</button>
+        <button class="btn primary" id="play" type="button">Pause tour</button>
+        <button class="btn" id="next" type="button" aria-label="Next step">Next ▶</button>
+        <button class="tog" id="critical" type="button" aria-pressed="false"><span class="box"></span>Critical change</button>
+        <button class="tog" id="fail" type="button" aria-pressed="false"><span class="box"></span>Review finds a problem</button>
+        <span class="spacer"></span>
+        <button class="btn" id="overview" type="button">Overview</button>
+        <span class="hint">Drag to orbit · scroll to zoom · ← → to step</span>
+      </div>
+    </section>
+
+    <aside class="panel" aria-live="polite">
+      <div class="sheet" id="sheet"></div>
+      <nav class="steps" id="steps" aria-label="Steps"></nav>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+"use strict";
+
+// ---------- content ----------
+const OWNER = {
+  you:   { label: "You",   token: "--you" },
+  agent: { label: "Agent", token: "--agent" },
+  tool:  { label: "Tool",  token: "--tool" },
+  live:  { label: "Live",  token: "--live" },
+};
+
+const STATIONS = [
+  { id: "idea", name: "Idea", owners: ["you"], phase: "build", shape: "idea",
+    what: "Every loop starts with a problem worth solving: a new idea, an Idea issue, or one of the bets you picked in last week's review.",
+    io: [["In", "Your judgement and last week's bets"], ["Out", "A rough idea"]] },
+  { id: "grill", name: "Grill the idea", cmd: "/grill-with-docs", owners: ["you", "agent"], phase: "build", shape: "grill",
+    what: "Claude interviews you in rounds, one branch of decisions at a time, with a recommended answer for each question. It looks up facts in the code itself and leaves every decision to you. New domain terms go into CONTEXT.md as they settle; hard-to-reverse choices can become ADRs.",
+    io: [["In", "A rough idea"], ["Out", "Shared understanding, glossary terms, ADRs"], ["Ends", "When every branch is settled and you confirm"]] },
+  { id: "spec", name: "Write the spec", cmd: "/to-spec", owners: ["agent"], phase: "build", shape: "spec",
+    what: "Turns the conversation into a spec issue: problem, solution, user stories, implementation and testing decisions, success metrics with the analytics events to add, and critical invariants when the feature touches money, auth or capacity. It asks you one thing: which seams to test at.",
+    io: [["In", "The grilling conversation"], ["Out", "A GitHub issue labelled spec"]] },
+  { id: "tickets", name: "Slice into tickets", cmd: "/to-tickets", owners: ["agent", "you"], phase: "build", shape: "tickets",
+    what: "Cuts the spec into tracer-bullet tickets. Each one runs through every layer (schema, server, UI, tests), can be demoed on its own, and lists the tickets that block it. You approve the breakdown before anything is published.",
+    io: [["In", "The spec"], ["Out", "ready-for-agent tickets with Blocked by edges"]] },
+  { id: "implement", name: "Implement", cmd: "/implement #42", owners: ["agent"], phase: "build", shape: "implement",
+    what: "Reads the ticket, sorts the change into a risk tier (Simple, Normal, Cross-cutting, Critical) and opens a separate worktree on its own branch. Then it builds test-first in red, green slices and adds the analytics events the spec names.",
+    io: [["In", "One ticket"], ["Out", "Code and tests on a branch"], ["Enforced", "A hook blocks edits to .env files, the lockfile, .git and committed migrations"]] },
+  { id: "verify", name: "Verify", cmd: "verify", owners: ["agent"], phase: "build", shape: "verify",
+    what: "Runs pnpm check: typecheck, lint and tests, plus the production build when routing, config, environment or dependencies changed. On FAIL it diagnoses, fixes and runs again. It never reports a check it didn't run.",
+    io: [["In", "The branch"], ["Out", "VERIFICATION: PASS, with the commands run"]] },
+  { id: "review", name: "Three-axis review", cmd: "code-review", owners: ["agent"], phase: "build", shape: "review",
+    what: "Three reviewers run side by side, each with fresh context. Standards checks the repo's rules and code smells. Spec checks the ticket's acceptance criteria and analytics events. Risk looks for security holes, data problems, races and personal data in logs. Each finding is checked against the code before it's fixed.",
+    io: [["In", "The diff against main"], ["Out", "Findings per axis, fixed and re-verified"]] },
+  { id: "pr", name: "Pull request, you merge", cmd: "gh pr create", owners: ["agent", "you"], phase: "build", shape: "pr",
+    what: "Claude commits with Conventional Commits, pushes and opens a PR that lists the risk tier, the invariants, the review results and the checks it actually ran. CI runs the full build. You read it and merge. Agents are denied the merge command.",
+    io: [["In", "A reviewed, verified branch"], ["Out", "A merged change on main"], ["Enforced", "CI on every PR; gh pr merge is denied to agents"]] },
+  { id: "ship", name: "Release gate", cmd: "/ship", owners: ["agent", "you"], phase: "build", shape: "ship",
+    what: "Checks the release as a whole: full build, safe migrations, no secrets or debug output, every environment variable documented, Sentry releases and source maps, a complete tracking plan. It reports READY or NOT READY and never deploys unless you ask.",
+    io: [["In", "Everything merged since the last release"], ["Out", "READY or NOT READY, with what was verified"]] },
+  { id: "production", name: "Production", owners: ["live"], phase: "observe", shape: "production",
+    what: "Real people use the product. Sentry records errors together with the release that caused them. PostHog records the events from the tracking plan and decides who sees each feature flag.",
+    io: [["In", "A released version"], ["Out", "Errors, events and flag results"]] },
+  { id: "signals", name: "Signals arrive", owners: ["tool"], phase: "observe", shape: "signals",
+    what: "Three streams arrive on their own. Sentry reports new and regressed errors. PostHog shows behaviour and flag rollouts. Dependabot opens a grouped minor and patch update every Monday, already tested by CI.",
+    io: [["From", "Sentry, PostHog, Dependabot"], ["Read by", "Agents, through MCP servers and gh"]] },
+  { id: "triage", name: "Triage", cmd: "/triage", owners: ["agent"], phase: "observe", shape: "triage",
+    what: "Every weekday morning: ranks new errors by users affected, reads the stack traces and opens bug tickets with the likely cause, labelled ready-for-agent when the fix is clear. Reviews Dependabot PRs and recommends a merge or writes a migration ticket. It never merges or fixes anything itself.",
+    io: [["In", "Errors and dependency PRs"], ["Out", "Bug tickets that go straight to /implement"]] },
+  { id: "weekly", name: "Weekly review", cmd: "/weekly-review", owners: ["agent", "you"], phase: "observe", shape: "weekly",
+    what: "Every Monday: did last week's features move their success metric? What broke, how healthy are dependencies and tickets, and what did we learn? It ends with two or three bets for next week. You pick one.",
+    io: [["In", "Merged PRs, PostHog metrics, Sentry trends"], ["Out", "A review note and proposed bets"]] },
+  { id: "vault", name: "Obsidian vault", owners: ["tool", "you"], phase: "observe", shape: "vault",
+    what: "The review lands in your vault under Projects, one note per week. Lessons that apply to every project go to Learnings, and fixes to the agent kit go into the template and reach every project through sync-kit. The bet you chose becomes the next idea.",
+    io: [["Where", "Projects/<repo>/Reviews/2026-W43.md"], ["Next", "Your chosen bet starts the loop again"]] },
+];
+
+const TOOLS = [
+  { id: "context", name: "CONTEXT.md & ADRs", near: "grill", off: 12, links: ["grill", "spec", "implement"],
+    what: "The domain glossary and the record of decisions that are hard to reverse. Agents read them before writing a spec or touching code, and use the same words in code and docs." },
+  { id: "issues", name: "GitHub Issues", near: "tickets", off: 4, links: ["spec", "tickets", "triage"],
+    what: "Specs and tickets live here, with labels the agents understand: spec, ready-for-agent, blocked, needs-human, critical, bug and dependencies. Each ticket's Blocked by section sets the order of work." },
+  { id: "guard", name: "Hooks & permissions", near: "implement", off: -2, links: ["implement", "pr"],
+    what: "The parts that are enforced, not just instructed. A hook blocks edits to .env files, the lockfile, .git and committed migrations. Settings deny force push, hard reset, merging PRs and pushing migrations to the linked database." },
+  { id: "ci", name: "Pull requests + CI", near: "pr", off: 6, links: ["verify", "review", "pr"],
+    what: "Every PR runs pnpm check:full on GitHub Actions, including Dependabot's. Agents open PRs; only you merge them." },
+  { id: "sentry", name: "Sentry", near: "production", off: -6, links: ["ship", "production", "signals", "triage"],
+    what: "Production errors with the release that caused them. Agents read it through the Sentry MCP server in /triage, /ship and /weekly-review." },
+  { id: "posthog", name: "PostHog", near: "signals", off: -4, links: ["spec", "production", "signals", "weekly"],
+    what: "Product analytics and feature flags. Specs name the events, /implement adds them to the code and the tracking plan, and /weekly-review reads the numbers back through the PostHog MCP server." },
+  { id: "dependabot", name: "Dependabot", near: "triage", off: 2, links: ["signals", "triage"],
+    what: "Opens one grouped minor and patch PR every Monday and one PR per major update. CI tests each; /triage recommends a merge or writes a migration ticket." },
+];
+
+const N = STATIONS.length;
+const STEP = (Math.PI * 2) / N;
+const R = 10;
+const idx = id => STATIONS.findIndex(s => s.id === id);
+const angleOf = i => Math.PI - i * STEP;                 // idea on the left, build arc across the front
+const posOf = (a, r = R, y = 0) => new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r);
+
+// ---------- state ----------
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const state = {
+  i: -1,            // current station index, -1 = overview
+  selected: null,   // station or tool id shown in the sheet
+  playing: !reduced,
+  critical: false,
+  fail: false,
+  failedLap: false,
+  moving: null,     // { from, to, kind, t0, dur, curve }
+  arrivedAt: 0,
+  follow: true,
+  overview: true,
+};
+
+// ---------- sheet ----------
+const sheet = document.getElementById("sheet");
+const stepsNav = document.getElementById("steps");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const chip = o => `<span class="chip" style="--c: var(${OWNER[o].token})"><i class="dot"></i>${OWNER[o].label}</span>`;
+
+function renderIntro() {
+  sheet.innerHTML = `
+    <div class="eyebrow"><span>Overview</span><span>${N} steps</span></div>
+    <h2>Idea to production, and back</h2>
+    <p class="what">The front arc is the build loop: you shape an idea, agents spec it, slice it, build it test-first, verify and review it, and open a pull request you merge. The back arc closes the loop: production sends errors, metrics and dependency updates back as tickets and lessons.</p>
+    <dl class="io">
+      <dt>Watch</dt><dd>The glowing packet is one feature moving through the loop.</dd>
+      <dt>Try</dt><dd>Turn on <b>Critical change</b> to bring in the security and database reviewers, or <b>Review finds a problem</b> to send the work back to /implement.</dd>
+      <dt>Click</dt><dd>Any station or dashed tool label for details.</dd>
+    </dl>`;
+}
+
+function renderStation(i) {
+  const s = STATIONS[i];
+  const phaseLabel = s.phase === "build" ? "Build" : "Observe & learn";
+  const phaseTok = s.phase === "build" ? "--agent" : "--tool";
+  let notes = "";
+  if (s.id === "review" && state.fail && !state.failedLap) {
+    notes += `<div class="note" style="--c: var(--risk)"><strong>Risk axis: required change.</strong> A member can cancel another member's booking by changing the ID in the request. The work goes back to /implement, gets a regression test and a server-side ownership check, then is verified and reviewed again.</div>`;
+  } else if (s.id === "review" && state.failedLap) {
+    notes += `<div class="note" style="--c: var(--live)"><strong>Second pass.</strong> The fix is in, verified again, and all three axes pass.</div>`;
+  }
+  if (state.critical && ["implement", "review", "spec", "tickets", "ship"].includes(s.id)) {
+    const msg = {
+      spec: "The spec gets a Critical Invariants section: who may do this, what must always hold, and what happens with two requests at once.",
+      tickets: "Every ticket touching an invariant is labelled critical and copies the invariants into its acceptance criteria.",
+      implement: "Critical tier: the invariants are written down before any code, and each is enforced by a database constraint, a transaction or a server check.",
+      review: "The security reviewer and the database reviewer join the Risk axis, and both always run for critical work.",
+      ship: "Critical changes in the release get a security review over the whole range.",
+    }[s.id];
+    notes += `<div class="note" style="--c: var(--risk)"><strong>Critical change.</strong> ${msg}</div>`;
+  }
+  sheet.innerHTML = `
+    <div class="eyebrow" style="--c: var(${phaseTok})"><span class="phase">${phaseLabel}</span><span>${String(i + 1).padStart(2, "0")} / ${N}</span></div>
+    <h2>${esc(s.name)}</h2>
+    ${s.cmd ? `<code class="cmd">${esc(s.cmd)}</code>` : ""}
+    <div class="owners">${s.owners.map(chip).join("")}</div>
+    <p class="what">${esc(s.what)}</p>
+    <dl class="io">${s.io.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+    ${notes}`;
+}
+
+function renderTool(t) {
+  const linked = t.links.map(id => STATIONS[idx(id)].name).join(", ");
+  sheet.innerHTML = `
+    <div class="eyebrow" style="--c: var(--tool)"><span class="phase">Tool or service</span><span>Used by ${t.links.length} steps</span></div>
+    <h2>${esc(t.name)}</h2>
+    <div class="owners">${chip("tool")}</div>
+    <p class="what">${esc(t.what)}</p>
+    <dl class="io"><dt>Used in</dt><dd>${esc(linked)}</dd></dl>`;
+}
+
+function renderSteps() {
+  const group = (phase, title) => `<h3>${title}</h3>` + STATIONS.map((s, i) => s.phase !== phase ? "" : `
+    <button class="step" type="button" data-i="${i}" style="--c: var(${OWNER[s.owners[0]].token})" ${state.i === i ? 'aria-current="step"' : ""}>
+      <span class="n">${String(i + 1).padStart(2, "0")}</span>
+      <span class="t">${esc(s.name)}</span>
+      ${s.cmd ? `<code>${esc(s.cmd.split(" ")[0])}</code>` : `<i class="dot"></i>`}
+    </button>`).join("");
+  stepsNav.innerHTML = group("build", "Build") + group("observe", "Observe & learn");
+}
+stepsNav.addEventListener("click", e => {
+  const b = e.target.closest(".step");
+  if (b) { setPlaying(false); jumpTo(+b.dataset.i); }
+});
+
+renderIntro();
+renderSteps();
+
+// ---------- three.js ----------
+const stage = document.getElementById("stage");
+const canvas = document.getElementById("gl");
+if (!window.THREE) {
+  stage.insertAdjacentHTML("beforeend", `<div class="fallback">The 3D view couldn't load. The step list on the right still walks through the whole loop.</div>`);
+  return;
+}
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+} catch (err) {
+  stage.insertAdjacentHTML("beforeend", `<div class="fallback">This browser can't show WebGL. The step list on the right still walks through the whole loop.</div>`);
+  return;
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 400);
+
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const themed = [];   // { m, token, emissive, k }
+function mat(token, opts = {}) {
+  const m = new THREE.MeshStandardMaterial({ roughness: opts.rough ?? 0.55, metalness: opts.metal ?? 0.1,
+    transparent: opts.opacity !== undefined, opacity: opts.opacity ?? 1, flatShading: !!opts.flat, depthWrite: opts.opacity === undefined });
+  themed.push({ m, token, emissive: opts.emissive || 0 });
+  return m;
+}
+function lineMat(token, opacity) {
+  const m = new THREE.LineBasicMaterial({ transparent: true, opacity });
+  themed.push({ m, token, line: true });
+  return m;
+}
+const hemi = new THREE.HemisphereLight(0xffffff, 0x445566, 0.85);
+const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+sun.position.set(8, 18, 12);
+scene.add(hemi, sun);
+
+function applyTheme() {
+  const isDark = css("color-scheme").includes("dark");
+  for (const t of themed) {
+    const c = new THREE.Color(css(t.token));
+    t.m.color.copy(c);
+    if (t.m.emissive) t.m.emissive.copy(c).multiplyScalar(t.emissive * (isDark ? 1 : 0.55));
+  }
+  hemi.intensity = isDark ? 0.75 : 0.95;
+  sun.intensity = isDark ? 0.7 : 0.75;
+}
+
+// floor and phase bands
+const floor = new THREE.Mesh(new THREE.CylinderGeometry(19, 19.4, 0.5, 96), mat("--plinth", { rough: 0.9 }));
+floor.position.y = -0.55;
+scene.add(floor);
+// Build arc covers station angles from angleOf(8) - STEP/2 up to angleOf(0) + STEP/2.
+// RingGeometry after rotateX(-90°) puts angle t at (cos t, 0, -sin t), i.e. our angle -t.
+// So our interval [lo, hi] corresponds to t in [-hi, -lo]; thetaStart = -hi, then rotate by 0.
+function bandFor(lo, hi, token) {
+  const g = new THREE.RingGeometry(R - 1.6, R + 1.6, 96, 1, -hi, hi - lo);
+  g.rotateX(-Math.PI / 2);
+  const m = new THREE.Mesh(g, mat(token, { opacity: 0.16 }));
+  m.position.y = -0.29;
+  scene.add(m);
+}
+const buildHi = angleOf(0) + STEP / 2, buildLo = angleOf(8) - STEP / 2;
+bandFor(buildLo, buildHi, "--agent");
+bandFor(buildLo - 5 * STEP, buildLo, "--tool");
+
+// track
+const track = new THREE.Mesh(new THREE.TorusGeometry(R, 0.06, 8, 220), mat("--track", { rough: 0.4 }));
+track.rotation.x = Math.PI / 2;
+track.position.y = 0.02;
+scene.add(track);
+
+// ---------- stations ----------
+const pickables = [];
+const anim = [];              // per-frame updaters
+const stationTop = [];        // world point where labels and links attach
+const plinthMat = mat("--plinth", { rough: 0.8 });
+const surfaceMat = mat("--surface", { rough: 0.7 });
+const ownerMat = {};
+for (const k of Object.keys(OWNER)) ownerMat[k] = mat(OWNER[k].token, { emissive: 0.18, rough: 0.45 });
+const riskMat = mat("--risk", { emissive: 0.35 });
+const liveMat = mat("--live", { emissive: 0.35 });
+const glassMat = mat("--agent", { opacity: 0.12 });
+
+function add(group, geo, m, x = 0, y = 0, z = 0) { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); group.add(o); return o; }
+
+STATIONS.forEach((s, i) => {
+  const a = angleOf(i);
+  const g = new THREE.Group();
+  g.position.copy(posOf(a));
+  g.rotation.y = -a + Math.PI / 2;
+  scene.add(g);
+  add(g, new THREE.CylinderGeometry(1.15, 1.3, 0.36, 40), plinthMat, 0, -0.1, 0);
+  add(g, new THREE.CylinderGeometry(1.0, 1.0, 0.06, 40), surfaceMat, 0, 0.11, 0);
+  const m = ownerMat[s.owners[0]];
+  let top = 1.9;
+  switch (s.shape) {
+    case "idea": {
+      const o = add(g, new THREE.IcosahedronGeometry(0.62, 0), m, 0, 1.0, 0);
+      anim.push(t => { o.rotation.y = t * 0.6; o.position.y = 1.0 + Math.sin(t * 1.6) * 0.08; });
+      break;
+    }
+    case "grill": {
+      const o = add(g, new THREE.OctahedronGeometry(0.6, 0), m, 0, 0.95, 0);
+      const qs = [0, 1, 2].map(k => add(g, new THREE.SphereGeometry(0.11, 12, 10), ownerMat.you));
+      anim.push(t => { o.rotation.y = t * 0.4; qs.forEach((q, k) => { const p = t * 1.3 + k * 2.09; q.position.set(Math.cos(p) * 0.95, 0.95 + Math.sin(p * 2) * 0.15, Math.sin(p) * 0.95); }); });
+      break;
+    }
+    case "spec": {
+      const p = add(g, new THREE.BoxGeometry(1.1, 0.08, 1.35), m, 0, 0.75, 0);
+      p.rotation.x = -0.35;
+      [0.25, 0.05, -0.15, -0.35].forEach((z, k) => { const l = add(g, new THREE.BoxGeometry(0.75 - k * 0.1, 0.03, 0.05), surfaceMat, -k * 0.05, 0.8 + z * -0.34, z); l.rotation.x = -0.35; });
+      top = 1.6;
+      break;
+    }
+    case "tickets": {
+      [-0.42, -0.14, 0.14, 0.42].forEach((x, k) => {
+        const o = add(g, new THREE.BoxGeometry(0.18, 0.95, 0.9), m, x, 0.62, 0);
+        anim.push(t => { o.position.y = 0.62 + Math.max(0, Math.sin(t * 2 - k * 0.6)) * 0.12; });
+      });
+      break;
+    }
+    case "implement": {
+      add(g, new THREE.BoxGeometry(1.5, 1.2, 1.5), glassMat, 0, 0.75, 0);
+      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.5, 1.2, 1.5)), lineMat("--agent", 0.8));
+      edges.position.y = 0.75; g.add(edges);
+      const cube = add(g, new THREE.BoxGeometry(0.5, 0.5, 0.5), riskMat, 0, 0.75, 0);
+      anim.push(t => { cube.rotation.set(t * 0.7, t * 0.9, 0); cube.material = Math.floor(t / 0.9) % 2 ? liveMat : riskMat; });
+      top = 2.0;
+      break;
+    }
+    case "verify": {
+      [-0.45, -0.15, 0.15, 0.45].forEach((x, k) => {
+        const o = add(g, new THREE.CylinderGeometry(0.11, 0.11, 0.9, 16), m, x, 0.6, 0);
+        const cap = add(g, new THREE.SphereGeometry(0.15, 14, 10), liveMat, x, 1.1, 0);
+        anim.push(t => { const d = Math.max(0, Math.sin(t * 2.4 - k * 0.7)) * 0.25; o.position.y = 0.6 + d; cap.position.y = 1.08 + d; });
+      });
+      break;
+    }
+    case "review": {
+      const pillars = [-0.48, 0, 0.48].map((x, k) => add(g, new THREE.CylinderGeometry(0.17, 0.2, 1.0 + k * 0.15, 20), m, x, 0.62 + k * 0.07, 0));
+      const lamps = [-0.48, 0, 0.48].map((x, k) => add(g, new THREE.SphereGeometry(0.17, 14, 10), liveMat, x, 1.25 + k * 0.15, 0));
+      const drones = [
+        add(g, new THREE.OctahedronGeometry(0.22, 0), riskMat),
+        add(g, new THREE.CylinderGeometry(0.17, 0.17, 0.32, 18), riskMat),
+      ];
+      anim.push(t => {
+        const failing = state.fail && !state.failedLap && state.i === idx("review");
+        lamps[2].material = failing ? riskMat : liveMat;
+        drones.forEach((d, k) => {
+          d.visible = state.critical;
+          const p = t * 1.2 + k * Math.PI;
+          d.position.set(Math.cos(p) * 1.05, 1.5 + Math.sin(t * 2 + k) * 0.12, Math.sin(p) * 1.05);
+          d.rotation.y = t;
+        });
+      });
+      top = 2.2;
+      break;
+    }
+    case "pr": {
+      const arch = add(g, new THREE.TorusGeometry(0.6, 0.11, 12, 32, Math.PI), m, 0, 0.35, 0);
+      add(g, new THREE.CylinderGeometry(0.11, 0.11, 0.25, 12), m, -0.6, 0.25, 0);
+      add(g, new THREE.CylinderGeometry(0.11, 0.11, 0.25, 12), m, 0.6, 0.25, 0);
+      const key = add(g, new THREE.TorusGeometry(0.16, 0.05, 8, 20), ownerMat.you, 0, 0.5, 0);
+      const stem = add(g, new THREE.BoxGeometry(0.05, 0.3, 0.05), ownerMat.you, 0, 0.2, 0);
+      anim.push(t => { key.rotation.y = stem.rotation.y = Math.sin(t * 0.8) * 0.6; });
+      top = 1.5;
+      break;
+    }
+    case "ship": {
+      const o = add(g, new THREE.ConeGeometry(0.38, 1.1, 24), m, 0, 0.85, 0);
+      const fins = add(g, new THREE.CylinderGeometry(0.5, 0.5, 0.12, 3), m, 0, 0.35, 0);
+      anim.push(t => { o.position.y = 0.85 + Math.sin(t * 1.5) * 0.06; fins.rotation.y = t * 0.5; });
+      break;
+    }
+    case "production": {
+      const o = add(g, new THREE.CylinderGeometry(0.5, 0.5, 1.2, 32), liveMat, 0, 0.75, 0);
+      const ring = add(g, new THREE.TorusGeometry(0.62, 0.04, 8, 40), liveMat, 0, 0.75, 0);
+      ring.rotation.x = Math.PI / 2;
+      anim.push(t => { const s = 1 + (reduced ? 0 : (t * 0.8 % 1)) * 0.9; ring.scale.set(s, s, 1); ring.visible = !reduced; o.rotation.y = t * 0.3; });
+      break;
+    }
+    case "signals": {
+      const toks = ["--risk", "--tool", "--tool"];
+      [-0.45, 0, 0.45].forEach((x, k) => {
+        add(g, new THREE.CylinderGeometry(0.04, 0.04, 1.0, 8), plinthMat, x, 0.6, 0);
+        const b = add(g, new THREE.SphereGeometry(0.16, 14, 10), mat(toks[k], { emissive: 0.5 }), x, 1.15, 0);
+        anim.push(t => { const s = 1 + Math.max(0, Math.sin(t * 3 - k * 1.3)) * 0.35; b.scale.setScalar(s); });
+      });
+      top = 1.7;
+      break;
+    }
+    case "triage": {
+      const o = add(g, new THREE.CylinderGeometry(0.65, 0.12, 0.9, 28, 1, true), m, 0, 0.7, 0);
+      o.material.side = THREE.DoubleSide;
+      const bits = [0, 1, 2].map(k => add(g, new THREE.SphereGeometry(0.08, 10, 8), riskMat));
+      anim.push(t => bits.forEach((b, k) => { const p = ((t * 0.6 + k / 3) % 1); const r = 0.55 * (1 - p); const q = t * 3 + k * 2; b.position.set(Math.cos(q) * r, 1.15 - p * 0.9, Math.sin(q) * r); }));
+      break;
+    }
+    case "weekly": {
+      const l = add(g, new THREE.BoxGeometry(0.62, 0.06, 0.85), m, -0.3, 0.55, 0); l.rotation.z = 0.35;
+      const r = add(g, new THREE.BoxGeometry(0.62, 0.06, 0.85), m, 0.3, 0.55, 0); r.rotation.z = -0.35;
+      add(g, new THREE.BoxGeometry(0.06, 0.2, 0.85), plinthMat, 0, 0.42, 0);
+      top = 1.4;
+      break;
+    }
+    case "vault": {
+      const o = add(g, new THREE.DodecahedronGeometry(0.62, 0), mat("--tool", { emissive: 0.25, flat: true, rough: 0.25, metal: 0.4 }), 0, 0.95, 0);
+      anim.push(t => { o.rotation.y = t * 0.35; o.rotation.x = Math.sin(t * 0.5) * 0.2; });
+      break;
+    }
+  }
+  g.traverse(o => { if (o.isMesh) { o.userData.key = s.id; pickables.push(o); } });
+  stationTop[i] = posOf(a, R, top);
+});
+
+// ---------- tools ----------
+const toolPos = {};
+const toolLinks = {};   // id -> [line]
+TOOLS.forEach(t => {
+  const a = angleOf(idx(t.near)) + THREE.MathUtils.degToRad(t.off);
+  const p = posOf(a, 15.6, 3.1);
+  toolPos[t.id] = p;
+  const g = new THREE.Group();
+  g.position.copy(p);
+  g.rotation.y = -a + Math.PI / 2;
+  scene.add(g);
+  const body = add(g, new THREE.BoxGeometry(1.2, 0.55, 0.55), mat("--tool", { emissive: 0.2, rough: 0.35 }));
+  add(g, new THREE.CylinderGeometry(0.03, 0.03, 3.4, 8), plinthMat, 0, -1.95, 0);
+  body.userData.key = t.id; pickables.push(body);
+  anim.push(tm => { body.position.y = Math.sin(tm * 0.9 + a) * 0.1; });
+  toolLinks[t.id] = t.links.map(id => {
+    const geo = new THREE.BufferGeometry().setFromPoints([p.clone().add(new THREE.Vector3(0, -0.3, 0)), stationTop[idx(id)]]);
+    const ln = new THREE.Line(geo, lineMat("--tool", 0.22));
+    ln.userData.station = id;
+    scene.add(ln);
+    return ln;
+  });
+});
+
+// ---------- loops (chords) ----------
+function chord(fromId, toId, lift, token) {
+  const a = stationTop[idx(fromId)].clone(), b = stationTop[idx(toId)].clone();
+  const mid = a.clone().add(b).multiplyScalar(0.5);
+  mid.multiplyScalar(lift.pull); mid.y = lift.y;
+  const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 64, 0.045, 8, false), mat(token, { opacity: 0.55, emissive: 0.3 }));
+  scene.add(tube);
+  const dots = [0, 1, 2, 3].map(() => { const d = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), riskMat); scene.add(d); return d; });
+  return { curve, tube, dots };
+}
+const failChord = chord("review", "implement", { pull: 0.62, y: 4.2 }, "--risk");
+const bugChord = chord("triage", "implement", { pull: 0, y: 5.5 }, "--risk");
+anim.push(t => {
+  failChord.tube.visible = state.fail;
+  failChord.dots.forEach((d, k) => { d.visible = state.fail && !reduced; d.position.copy(failChord.curve.getPoint((t * 0.25 + k / 4) % 1)); });
+  bugChord.dots.forEach((d, k) => { d.visible = !reduced; d.position.copy(bugChord.curve.getPoint((t * 0.12 + k / 4) % 1)); });
+});
+
+// ---------- packet ----------
+const packetMat = mat("--packet", { emissive: 0.9, rough: 0.2 });
+const packet = new THREE.Mesh(new THREE.SphereGeometry(0.3, 24, 18), packetMat);
+const tag = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.05, 8, 32), riskMat);
+packet.add(tag);
+scene.add(packet);
+packet.visible = false;
+const packetHome = i => posOf(angleOf(i), R, 0).add(new THREE.Vector3(0, i === -1 ? 0 : stationTop[i].y + 0.55, 0));
+
+// ---------- labels ----------
+const labelsEl = document.getElementById("labels");
+const labels = [];
+STATIONS.forEach((s, i) => {
+  const el = document.createElement("button");
+  el.type = "button";
+  el.className = "lbl";
+  el.style.setProperty("--c", `var(${OWNER[s.owners[0]].token})`);
+  el.innerHTML = `<i class="dot"></i><b>${esc(s.name)}</b>${s.cmd ? ` <code>${esc(s.cmd.split(" ")[0])}</code>` : ""}`;
+  el.addEventListener("click", () => { setPlaying(false); jumpTo(i); });
+  labelsEl.appendChild(el);
+  labels.push({ el, at: stationTop[i].clone().add(new THREE.Vector3(0, 0.35, 0)), key: s.id });
+});
+TOOLS.forEach(t => {
+  const el = document.createElement("button");
+  el.type = "button";
+  el.className = "lbl tool";
+  el.style.setProperty("--c", "var(--tool)");
+  el.innerHTML = `<i class="dot"></i>${esc(t.name)}`;
+  el.addEventListener("click", () => selectTool(t.id));
+  labelsEl.appendChild(el);
+  labels.push({ el, at: toolPos[t.id].clone().add(new THREE.Vector3(0, 0.55, 0)), key: t.id });
+});
+
+// ---------- camera (orbit) ----------
+const orbit = { theta: 0, phi: 0.98, r: 34, target: new THREE.Vector3(0, 0, 0) };
+const goal = { theta: 0, phi: 0.98, r: 34, target: new THREE.Vector3(0, 0, 0) };
+function overviewGoal() { goal.target.set(0, 0, 0); goal.phi = 0.98; goal.r = innerWidth < 700 ? 44 : 34; }
+function focusGoal(p, a) { goal.target.copy(p).multiplyScalar(0.55); goal.target.y = 1; goal.r = innerWidth < 700 ? 22 : 17; goal.phi = 1.05; goal.theta = Math.PI / 2 - a; }
+overviewGoal(); orbit.r = goal.r;
+function wrapDelta(a) { return Math.atan2(Math.sin(a), Math.cos(a)); }
+function placeCamera() {
+  camera.position.set(
+    orbit.target.x + orbit.r * Math.sin(orbit.phi) * Math.sin(orbit.theta),
+    orbit.target.y + orbit.r * Math.cos(orbit.phi),
+    orbit.target.z + orbit.r * Math.sin(orbit.phi) * Math.cos(orbit.theta));
+  camera.lookAt(orbit.target);
+}
+
+const pointers = new Map();
+let drag = null;
+canvas.addEventListener("pointerdown", e => {
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  drag = { x: e.clientX, y: e.clientY, moved: 0, pinch: pointers.size === 2 ? pinchDist() : 0, r: goal.r };
+  canvas.classList.add("dragging");
+});
+function pinchDist() { const [a, b] = [...pointers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); }
+canvas.addEventListener("pointermove", e => {
+  if (!pointers.has(e.pointerId) || !drag) return;
+  const prev = pointers.get(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 2) {
+    if (!drag.pinch) { drag.pinch = pinchDist(); drag.r = goal.r; }
+    goal.r = THREE.MathUtils.clamp(drag.r * drag.pinch / pinchDist(), 9, 60);
+    drag.moved += 10; state.follow = false;
+    return;
+  }
+  const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
+  drag.moved += Math.abs(dx) + Math.abs(dy);
+  if (drag.moved > 4) {
+    state.follow = false;
+    goal.theta -= dx * 0.006;
+    goal.phi = THREE.MathUtils.clamp(goal.phi - dy * 0.005, 0.25, 1.45);
+  }
+});
+function endPointer(e) {
+  pointers.delete(e.pointerId);
+  if (pointers.size === 0) {
+    canvas.classList.remove("dragging");
+    if (drag && drag.moved <= 4) pick(e);
+    drag = null;
+  }
+}
+canvas.addEventListener("pointerup", endPointer);
+canvas.addEventListener("pointercancel", endPointer);
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  state.follow = false;
+  goal.r = THREE.MathUtils.clamp(goal.r * Math.exp(e.deltaY * 0.0012), 9, 60);
+}, { passive: false });
+
+const ray = new THREE.Raycaster();
+function pick(e) {
+  const rect = canvas.getBoundingClientRect();
+  const v = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+  ray.setFromCamera(v, camera);
+  const hit = ray.intersectObjects(pickables, false)[0];
+  if (!hit) return;
+  const key = hit.object.userData.key;
+  const si = idx(key);
+  setPlaying(false);
+  if (si >= 0) jumpTo(si); else selectTool(key);
+}
+
+// ---------- tour ----------
+const playBtn = document.getElementById("play");
+function setPlaying(on) {
+  state.playing = on;
+  playBtn.textContent = on ? "Pause tour" : "Play tour";
+  state.arrivedAt = performance.now() / 1000;
+}
+playBtn.addEventListener("click", () => {
+  if (!state.playing && state.i === -1) { setPlaying(true); step(1); return; }
+  setPlaying(!state.playing);
+});
+document.getElementById("next").addEventListener("click", () => { setPlaying(false); step(1); });
+document.getElementById("prev").addEventListener("click", () => { setPlaying(false); step(-1); });
+document.getElementById("overview").addEventListener("click", () => {
+  setPlaying(false);
+  state.overview = true; state.follow = true; state.selected = null;
+  overviewGoal(); renderIntro(); highlight(null);
+});
+function toggle(id, key) {
+  const b = document.getElementById(id);
+  b.addEventListener("click", () => {
+    state[key] = !state[key];
+    b.setAttribute("aria-pressed", String(state[key]));
+    if (key === "fail" && !state[key]) state.failedLap = false;
+    if (state.i >= 0 && !state.selected?.startsWith?.("tool:")) renderStation(state.i);
+  });
+}
+toggle("critical", "critical");
+toggle("fail", "fail");
+addEventListener("keydown", e => {
+  if (e.target.closest && e.target.closest("input, textarea")) return;
+  if (e.key === "ArrowRight") { setPlaying(false); step(1); }
+  else if (e.key === "ArrowLeft") { setPlaying(false); step(-1); }
+  else if (e.key === " " && e.target === document.body) { e.preventDefault(); playBtn.click(); }
+});
+
+function highlight(key) {
+  labels.forEach(l => l.el.classList.toggle("on", l.key === key));
+  Object.entries(toolLinks).forEach(([tid, lines]) => lines.forEach(ln => {
+    ln.material.opacity = (key === tid || key === ln.userData.station) ? 0.85 : 0.22;
+  }));
+}
+
+function arrive(i) {
+  state.i = i;
+  state.overview = false;
+  state.selected = STATIONS[i].id;
+  state.arrivedAt = performance.now() / 1000;
+  renderStation(i);
+  renderSteps();
+  highlight(STATIONS[i].id);
+}
+
+function move(to, kind) {
+  const from = state.i;
+  const dur = reduced ? 0 : kind === "jump" ? 0.7 : 1.5;
+  state.moving = { from, to, kind, t0: performance.now() / 1000, dur };
+  state.follow = true;
+  packet.visible = true;
+  focusGoal(posOf(angleOf(to)), angleOf(to));
+  arrive(to);
+}
+
+function step(dir) {
+  if (state.moving) return;
+  if (state.i === -1) { move(0, "jump"); return; }
+  if (dir > 0) {
+    if (STATIONS[state.i].id === "review" && state.fail && !state.failedLap) { state.failedLap = true; move(idx("implement"), "fail"); return; }
+    const to = (state.i + 1) % N;
+    if (to === 0) state.failedLap = false;
+    move(to, "ring");
+  } else {
+    move((state.i - 1 + N) % N, "back");
+  }
+}
+function jumpTo(i) { if (state.moving) state.moving = null; move(i, "jump"); }
+function selectTool(id) {
+  const t = TOOLS.find(x => x.id === id);
+  state.selected = "tool:" + id;
+  renderTool(t);
+  highlight(id);
+  state.follow = true;
+  const p = toolPos[id];
+  const a = Math.atan2(p.z, p.x);
+  goal.target.copy(p).multiplyScalar(0.5); goal.target.y = 2; goal.r = innerWidth < 700 ? 24 : 18; goal.phi = 1.0; goal.theta = Math.PI / 2 - a;
+}
+
+function updatePacket(now) {
+  const m = state.moving;
+  tag.visible = state.critical;
+  if (!m) {
+    if (state.i >= 0) {
+      const p = packetHome(state.i);
+      packet.position.copy(p); packet.position.y += Math.sin(now * 2) * 0.08;
+    }
+    return;
+  }
+  const k = m.dur === 0 ? 1 : Math.min(1, (now - m.t0) / m.dur);
+  const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+  if (m.from === -1 || m.kind === "jump") {
+    const a = m.from === -1 ? packetHome(m.to).clone().setY(9) : packetHome(m.from);
+    packet.position.lerpVectors(a, packetHome(m.to), e);
+  } else if (m.kind === "fail") {
+    const p = failChord.curve.getPoint(e);
+    packet.position.copy(p).add(new THREE.Vector3(0, 0.3, 0));
+  } else {
+    const a0 = angleOf(m.from), a1 = m.kind === "back" ? a0 + STEP : a0 - STEP;
+    const a = a0 + (a1 - a0) * e;
+    const y0 = packetHome(m.from).y, y1 = packetHome(m.to).y;
+    packet.position.copy(posOf(a, R, y0 + (y1 - y0) * e + Math.sin(Math.PI * e) * 0.9));
+  }
+  if (k >= 1) { state.moving = null; state.arrivedAt = now; }
+}
+
+// ---------- render loop ----------
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / Math.max(1, h);
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+applyTheme();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+const v = new THREE.Vector3();
+const start = performance.now() / 1000;
+let last = start;
+function frame() {
+  const now = performance.now() / 1000;
+  const dt = Math.min(0.05, now - last); last = now;
+  const t = reduced ? 0 : now - start;
+
+  if (state.playing && !state.moving && now - state.arrivedAt > (state.i === -1 ? 3 : 4.8)) step(1);
+  if (state.overview && state.playing === false && !drag && !reduced) goal.theta += dt * 0.05;
+
+  const ease = reduced ? 1 : 1 - Math.exp(-dt * 3.2);
+  orbit.theta += wrapDelta(goal.theta - orbit.theta) * ease;
+  orbit.phi += (goal.phi - orbit.phi) * ease;
+  orbit.r += (goal.r - orbit.r) * ease;
+  if (state.follow || state.overview) orbit.target.lerp(goal.target, ease);
+  placeCamera();
+
+  anim.forEach(f => f(t));
+  updatePacket(now);
+  renderer.render(scene, camera);
+
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for (const l of labels) {
+    v.copy(l.at).project(camera);
+    const behind = v.z > 1;
+    const d = camera.position.distanceTo(l.at);
+    const fade = THREE.MathUtils.clamp(1.25 - (d - orbit.r * 0.6) / (orbit.r * 0.9), 0.35, 1);
+    l.el.style.opacity = behind ? 0 : (l.el.classList.contains("on") ? 1 : fade).toFixed(2);
+    l.el.style.transform = `translate(${(v.x * 0.5 + 0.5) * w}px, ${(-v.y * 0.5 + 0.5) * h}px) translate(-50%, -130%)`;
+    l.el.style.zIndex = String(1000 - Math.round(d * 10));
+  }
+  requestAnimationFrame(frame);
+}
+setPlaying(state.playing);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

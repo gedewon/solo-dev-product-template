@@ -4,23 +4,45 @@ You describe outcomes and make the product and architecture decisions. Claude pl
 
 ## The loop
 
-```text
-        ┌──────────────────────────── BUILD ────────────────────────────┐
-idea ──/grill-with-docs──▶ shared understanding (+ CONTEXT.md, ADRs)
-     ──/to-spec─────────▶ spec issue, with success metrics and events
-     ──/to-tickets──────▶ ticket issues, sliced vertically, with blockers
-     ──/implement #N────▶ worktree → TDD + instrumentation → verify → review → PR
-     ──you review & merge
-     ──/ship────────────▶ release readiness report
-        └───────────────────────────────────────────────────────────────┘
-        ┌──────────────────────── OBSERVE & LEARN ──────────────────────┐
-     Sentry (errors) ─────┐
-     Dependabot (PRs) ────┼─/triage (daily)─────▶ bug and upgrade tickets ──▶ /implement
-     PostHog (metrics) ───┘
-     ──/weekly-review───▶ note in Obsidian: shipped, results, broke, lessons, bets
-     ──you pick a bet ──▶ back to /grill-with-docs
-        └───────────────────────────────────────────────────────────────┘
+Amber is you, teal is an agent, indigo is a tool or service, green is the live product. Red arrows send work back.
+
+```mermaid
+flowchart TB
+    subgraph BUILD["Build"]
+        idea(["Idea or chosen bet"]):::you
+        grill["/grill-with-docs<br/>interview, glossary, ADRs"]:::pair
+        spec["/to-spec<br/>spec, success metrics, invariants"]:::agent
+        tickets["/to-tickets<br/>vertical slices with blockers"]:::agent
+        impl["/implement<br/>worktree, risk tier, TDD, events"]:::agent
+        verify["verify<br/>pnpm check"]:::agent
+        review["code-review<br/>Standards, Spec, Risk"]:::agent
+        pr{{"Pull request + CI<br/>you merge"}}:::you
+        ship["/ship<br/>READY or NOT READY"]:::agent
+        idea --> grill --> spec --> tickets --> impl --> verify --> review --> pr --> ship
+        review -. required change .-> impl
+    end
+    subgraph LEARN["Observe and learn"]
+        prod[("Production")]:::live
+        signals["Sentry, PostHog, Dependabot"]:::tool
+        triage["/triage<br/>every weekday"]:::agent
+        weekly["/weekly-review<br/>every Monday"]:::agent
+        vault[("Obsidian vault")]:::tool
+        prod --> signals --> triage
+        signals --> weekly --> vault
+    end
+    ship --> prod
+    triage -. bug tickets .-> impl
+    vault -- you pick the next bet --> idea
+
+    classDef you stroke:#d48a1f,stroke-width:2px
+    classDef pair stroke:#d48a1f,stroke-width:2px,stroke-dasharray:4 3
+    classDef agent stroke:#2a9fa1,stroke-width:2px
+    classDef tool stroke:#7276e0,stroke-width:2px
+    classDef live stroke:#3fa865,stroke-width:2px
+    linkStyle 8,14 stroke:#d9574a,stroke-width:2px
 ```
+
+To explore the same loop in 3D, open [`docs/workflow/loop.html`](docs/workflow/loop.html) in a browser: download it or clone the repo, then double-click it. A packet tours every step, and a side panel explains who acts, what goes in and out, and what is enforced. The toggles show what changes for a critical change and when review finds a problem.
 
 Every spec says how success will be measured. `/implement` adds the events. `/weekly-review` reads them back a week later and asks whether it worked. That is what turns a build pipeline into a product loop.
 
