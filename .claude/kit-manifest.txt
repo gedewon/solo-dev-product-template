@@ -38,6 +38,7 @@ replace .claude/rules/testing.md
 replace .claude/rules/observability.md
 replace .claude/kit-manifest.txt
 replace WORKFLOW.md
+replace docs/workflow/loop.html
 replace scripts/sync-kit.sh
 
 seed .claude/settings.json
