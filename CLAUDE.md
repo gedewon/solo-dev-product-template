@@ -15,6 +15,9 @@ Most work goes through these skills. `WORKFLOW.md` explains them for humans.
 | Slice it into tickets | `/to-tickets` | the user |
 | Build one ticket or change | `/implement` | the user |
 | Release check | `/ship` | the user |
+| Errors and dependency PRs → tickets | `/triage` | the user, or a daily scheduled task |
+| Did it work, what next | `/weekly-review` | the user, or a weekly scheduled task |
+| Install Sentry and PostHog (once) | `/setup-observability` | the user |
 | Test-first loop | `tdd` | `/implement`, or when the user asks |
 | Run the checks | `verify` | before calling anything done |
 | Three-axis review | `code-review` | `/implement`, or when the user asks |

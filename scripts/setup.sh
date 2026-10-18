@@ -63,6 +63,7 @@ if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1 && gh repo vi
   gh label create needs-human     --color fbca04 --description "Needs a product or architecture decision" --force
   gh label create critical        --color d93f0b --description "Touches a critical area in AGENTS.md" --force
   gh label create bug             --color d73a4a --description "Something is broken" --force
+  gh label create dependencies    --color 0366d6 --description "Dependency updates from Dependabot" --force
 else
   echo "Skipped: gh is not installed, not logged in, or this repo has no GitHub remote yet."
   echo "Run this script again after 'gh auth login' and pushing to GitHub."
@@ -76,6 +77,17 @@ cat <<'EOF'
 Setup complete. Next:
   1. Fill in the TODO(setup) sections in AGENTS.md: what the product is,
      its critical areas and invariants, and its critical journeys.
-  2. Commit pnpm-lock.yaml with the rest: git add -A && git commit -m "chore: set up project"
-  3. Start the first feature with /grill-with-docs in Claude Code.
+  2. Commit pnpm-lock.yaml with the rest and push:
+     git add -A && git commit -m "chore: set up project" && git push
+  3. In Claude Code, run /setup-observability to add Sentry and PostHog,
+     merge its PR, then run /mcp to connect their MCP servers.
+  4. Start the first feature with /grill-with-docs.
 EOF
+
+if [ -z "${OBSIDIAN_VAULT:-}" ]; then
+  cat <<'EOF'
+
+Optional: point Claude at your Obsidian vault once per machine so
+/weekly-review writes there. See "Obsidian" in WORKFLOW.md.
+EOF
+fi

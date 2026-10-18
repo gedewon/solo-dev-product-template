@@ -48,6 +48,8 @@ If the main checkout has uncommitted changes, leave them alone and mention them 
 
 Call the Skill tool with "tdd" and work in vertical slices at the seams the spec or ticket names. Run the typechecker and the single test file you're working on as you go. Keep the scope to what the ticket asks; note unrelated problems for the report instead of fixing them.
 
+**Instrument as you build.** If the spec's Success Metrics section names analytics events, add them in the same change and add their rows to `docs/analytics/tracking-plan.md`. If it names a feature flag, put the new behaviour behind it, read on the server where the decision matters. Follow `.claude/rules/observability.md`. If analytics isn't set up yet, leave a note in the PR instead of installing it.
+
 ## 5. Verify
 
 Call the Skill tool with "verify". Do not continue while it reports FAIL: diagnose, fix, verify again.

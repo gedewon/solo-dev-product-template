@@ -35,7 +35,9 @@ Call the Skill tool with "verify" and run the full build (`pnpm check:full`). Ru
 
 **Operations**
 - Every environment variable the code reads is listed in `.env.example` and set in the deploy target.
-- Errors reach whatever error reporting the project uses.
+- Sentry is configured for this release: source maps upload in the build, the release and environment are set. If the Sentry MCP server is connected, list unresolved issues from the current release so nothing known-broken ships again.
+- Every analytics event added in this range is in `docs/analytics/tracking-plan.md`. New feature flags have a rollout plan; flags fully rolled out are listed for removal.
+- If observability isn't set up yet, report that as a remaining risk rather than a failure.
 - There is a rollback path: previous deploy, migration down-steps or a forward fix plan.
 
 ## 4. Report

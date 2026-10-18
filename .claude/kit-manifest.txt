@@ -16,12 +16,15 @@ replace .claude/skills/grilling/
 replace .claude/skills/implement/
 replace .claude/skills/improve-codebase-architecture/
 replace .claude/skills/security/
+replace .claude/skills/setup-observability/
 replace .claude/skills/ship/
 replace .claude/skills/tdd/
 replace .claude/skills/to-spec/
 replace .claude/skills/to-tickets/
+replace .claude/skills/triage/
 replace .claude/skills/unslop/
 replace .claude/skills/verify/
+replace .claude/skills/weekly-review/
 replace .claude/agents/security-reviewer.md
 replace .claude/agents/database-reviewer.md
 replace .claude/hooks/protect-files.mjs
@@ -32,6 +35,7 @@ replace .claude/rules/nextjs.md
 replace .claude/rules/security.md
 replace .claude/rules/supabase.md
 replace .claude/rules/testing.md
+replace .claude/rules/observability.md
 replace .claude/kit-manifest.txt
 replace WORKFLOW.md
 replace scripts/sync-kit.sh
@@ -40,3 +44,6 @@ seed .claude/settings.json
 seed docs/agents/issue-tracker.md
 seed .github/pull_request_template.md
 seed .github/workflows/ci.yml
+seed .github/dependabot.yml
+seed .mcp.json
+seed docs/analytics/tracking-plan.md

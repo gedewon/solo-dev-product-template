@@ -12,7 +12,9 @@ Shared instructions for every coding agent working in this repo (Claude Code rea
 - Tailwind CSS 4, themed from the tokens in `app/globals.css`
 - Vitest + Testing Library for tests
 - pnpm, Node 22
-<!-- TODO(setup): add Supabase, payments, email, analytics and error reporting as the project adopts them. -->
+- Sentry for errors, PostHog for product analytics and feature flags (installed by `/setup-observability`; until then, not present)
+- Dependabot for dependency updates
+<!-- TODO(setup): add Supabase, payments and email as the project adopts them. -->
 
 ## Commands
 
@@ -30,7 +32,8 @@ pnpm test:watch    # tests in watch mode
 3. **Rules that must always hold are enforced by the database** (constraints, unique indexes, transactions), not only by application code. Assume two requests can arrive at the same moment.
 4. **No raw colour values in components.** Use the semantic utilities from `app/globals.css` (`bg-surface`, `text-fg-muted`). If a token is missing, add it to the token file; don't hardcode a value.
 5. **Every schema change is a new migration.** Never edit a migration that has been committed.
-6. **Never claim a check passed if you didn't run it.** Report what you actually verified.
+6. **No personal data in analytics or error reports.** Identify users by internal ID only. Every analytics event is listed in `docs/analytics/tracking-plan.md`.
+7. **Never claim a check passed if you didn't run it.** Report what you actually verified.
 
 ## Critical areas
 
@@ -63,6 +66,8 @@ Always critical, in any product: authentication, authorization and roles, paymen
 | `CONTEXT.md` | Domain glossary. Created when the first term is pinned down. Use its words in code and docs. |
 | `docs/adr/` | Decisions that are hard to reverse and surprising without context. |
 | `docs/agents/issue-tracker.md` | How agents read and write tickets, and the label vocabulary. |
+| `docs/analytics/tracking-plan.md` | Every analytics event and feature flag. |
+| `.mcp.json` | Sentry and PostHog MCP servers, so agents can read errors and metrics. |
 | `.claude/rules/` | Focused rules; most load only when matching files are touched. |
 | `.claude/skills/` | Workflow skills: spec, tickets, implement, review, verify, ship. See `WORKFLOW.md`. |
 | `.claude/agents/` | Security and database reviewers. |

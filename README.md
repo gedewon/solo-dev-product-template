@@ -16,8 +16,9 @@ A Next.js starter with an AI development workflow built in. Claude Code shapes i
 
    It renames the package, creates `.env.local`, installs dependencies, creates the GitHub labels the workflow uses, and runs `pnpm check:full`.
 3. Fill in the `TODO(setup)` sections in `AGENTS.md`: what the product is, its critical areas and their invariants, and its critical user journeys. The workflow leans on these.
-4. Commit, including `pnpm-lock.yaml`.
-5. In Claude Code, run `/grill-with-docs` with your first feature idea.
+4. Commit, including `pnpm-lock.yaml`, and push.
+5. In Claude Code, run `/setup-observability` to add Sentry and PostHog, merge its PR, then run `/mcp` to sign in to both. Set up Obsidian once per machine (see `WORKFLOW.md`).
+6. Run `/grill-with-docs` with your first feature idea.
 
 ## What's inside
 
@@ -28,21 +29,25 @@ WORKFLOW.md                    the human guide to the loop
 .claude/
   skills/                      grill-with-docs, to-spec, to-tickets, implement, tdd,
                                verify, code-review, security, db-review, ship,
+                               setup-observability, triage, weekly-review,
                                grilling, domain-modeling, codebase-design,
                                improve-codebase-architecture, unslop
   agents/                      security-reviewer, database-reviewer
   rules/                       git and architecture load always; typescript, nextjs,
-                               security, supabase and testing load only for matching files
+                               security, supabase, testing and observability load
+                               only for matching files
   hooks/protect-files.mjs      blocks edits to .env files, the lockfile, .git/, committed migrations
   settings.json                command allowlist, denied commands, hook registration
   kit-manifest.txt             which files the kit owns
+.mcp.json                      Sentry and PostHog MCP servers for the agents
 docs/
   agents/issue-tracker.md      how agents use GitHub Issues, and the label set
+  analytics/tracking-plan.md   every analytics event and feature flag
   adr/                         decisions; two to start with
 scripts/
   setup.sh                     one-time project setup
   sync-kit.sh                  pull kit updates into a project
-.github/                       CI (pnpm check:full), PR template, issue templates
+.github/                       CI (pnpm check:full), Dependabot, PR and issue templates
 app/, lib/                     a minimal Next.js 16 app with design tokens and one test
 ```
 
@@ -54,7 +59,8 @@ app/, lib/                     a minimal Next.js 16 app with design tokens and o
 - **Enforce what matters.** The hook and the denied commands can't be talked around. Instructions cover the rest. See "What enforces what" in `WORKFLOW.md`.
 - **Agents open PRs; you merge.** Merging is a denied command.
 - **The kit lives in each repo.** Cloud sessions don't load plugins, but they do load a repo's `.claude/` folder. See `docs/adr/0001-vendor-the-agent-kit-in-each-repo.md`.
-- **Integrations are added when needed.** Supabase, payments, email, analytics and error reporting are not pre-wired. Wire them in the first project that needs them, then pull the proven setup back into this template.
+- **The loop closes.** Specs name a success metric and its events, `/implement` adds them, `/triage` turns Sentry errors and Dependabot PRs into tickets, and `/weekly-review` checks the metric and writes the result to Obsidian. Sentry and PostHog are installed by `/setup-observability` with the vendors' own wizards, so the SDK code is always current.
+- **Product integrations are added when needed.** Supabase, payments and email are not pre-wired. Wire them in the first project that needs them, then pull the proven setup back into this template.
 
 ## Maintain the kit
 

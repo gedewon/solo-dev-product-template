@@ -84,12 +84,12 @@ A ticket or spec labelled `critical` always gets both specialists.
 
 - The diff command and commit list.
 - The path or fetched contents of the spec and ticket.
-- The brief: "Report: (a) requirements or acceptance criteria that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong; (d) any Critical Invariant from the spec that is not enforced server-side or in the database. Quote the spec line for each finding. Under 400 words."
+- The brief: "Report: (a) requirements or acceptance criteria that are missing or partial; (b) behaviour in the diff that wasn't asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong; (d) any Critical Invariant from the spec that is not enforced server-side or in the database; (e) analytics events or feature flags named in the spec's Success Metrics that are missing from the code or from `docs/analytics/tracking-plan.md`. Quote the spec line for each finding. Under 400 words."
 
 **Risk sub-agent** (general-purpose) prompt includes:
 
 - The diff command, commit list and changed files.
-- The brief: "Review this diff as an independent senior engineer. Don't assume it is correct. Look for, in priority order: security holes, incorrect logic and unhandled edge cases, data integrity problems, race conditions and duplicate requests, regressions in behaviour the diff didn't mean to change, and missing error states (unauthorized, forbidden, not found, conflict, invalid input). Report only real issues. For each: severity (critical / important / minor), location, problem, impact, fix. If the change is sound, say so. Under 400 words."
+- The brief: "Review this diff as an independent senior engineer. Don't assume it is correct. Look for, in priority order: security holes, incorrect logic and unhandled edge cases, data integrity problems, race conditions and duplicate requests, regressions in behaviour the diff didn't mean to change, missing error states (unauthorized, forbidden, not found, conflict, invalid input), and personal data or secrets sent to analytics, error reporting or logs. Report only real issues. For each: severity (critical / important / minor), location, problem, impact, fix. If the change is sound, say so. Under 400 words."
 
 **Specialists** from step 5 run in the same parallel batch, each given the diff command, changed files and the spec's Critical Invariants if any. Their agent definitions carry their own checklists.
 

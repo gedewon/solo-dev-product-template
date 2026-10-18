@@ -5,13 +5,24 @@ You describe outcomes and make the product and architecture decisions. Claude pl
 ## The loop
 
 ```text
+        ┌──────────────────────────── BUILD ────────────────────────────┐
 idea ──/grill-with-docs──▶ shared understanding (+ CONTEXT.md, ADRs)
-     ──/to-spec─────────▶ spec issue
+     ──/to-spec─────────▶ spec issue, with success metrics and events
      ──/to-tickets──────▶ ticket issues, sliced vertically, with blockers
-     ──/implement #N────▶ worktree → TDD → verify → three-axis review → PR
+     ──/implement #N────▶ worktree → TDD + instrumentation → verify → review → PR
      ──you review & merge
      ──/ship────────────▶ release readiness report
+        └───────────────────────────────────────────────────────────────┘
+        ┌──────────────────────── OBSERVE & LEARN ──────────────────────┐
+     Sentry (errors) ─────┐
+     Dependabot (PRs) ────┼─/triage (daily)─────▶ bug and upgrade tickets ──▶ /implement
+     PostHog (metrics) ───┘
+     ──/weekly-review───▶ note in Obsidian: shipped, results, broke, lessons, bets
+     ──you pick a bet ──▶ back to /grill-with-docs
+        └───────────────────────────────────────────────────────────────┘
 ```
+
+Every spec says how success will be measured. `/implement` adds the events. `/weekly-review` reads them back a week later and asks whether it worked. That is what turns a build pipeline into a product loop.
 
 ## Commands
 
@@ -25,6 +36,9 @@ idea ──/grill-with-docs──▶ shared understanding (+ CONTEXT.md, ADRs)
 | Focused review | `/security`, `/db-review` | Runs one specialist reviewer on the current diff. |
 | Release | `/ship` | Full build, migration and secrets checks, operational basics. Reports READY or NOT READY. Never deploys unless you ask. |
 | Find structural problems | `/improve-codebase-architecture` | Finds shallow modules worth deepening, shows them in an HTML report, then grills you on the one you pick. |
+| Add error tracking and analytics | `/setup-observability` | Once per project. You run the Sentry and PostHog wizards (they need your browser login); Claude then fixes up privacy, env vars and tests, and opens a PR. |
+| Turn problems into tickets | `/triage` | New and regressed Sentry errors become `bug` tickets with stack traces and likely causes. Dependabot PRs get a merge recommendation or a migration ticket. Nothing is merged or fixed. |
+| Review the week | `/weekly-review` | What shipped and whether it moved its metric, what broke, dependency and ticket health, lessons, and two or three bets for next week. Written to your Obsidian vault. |
 
 For a tiny change (copy, colour, one obvious line), just ask. Claude still runs `pnpm check`.
 
@@ -55,11 +69,54 @@ It will not stop to ask whether to push or open a PR; that is the agreed default
 | Mechanism | Strength | Used for |
 |---|---|---|
 | `.claude/hooks/protect-files.mjs` | Enforced. Blocks the edit. | `.env` files, the lockfile, `.git/`, committed migrations |
+| Dependabot + CI | Enforced. Every dependency update is a tested PR. | dependency drift |
 | `.claude/settings.json` permissions | Enforced. Denied commands never run. | force push, hard reset, merging PRs, pushing migrations to the linked database |
 | CI (`.github/workflows/ci.yml`) | Enforced on every PR | typecheck, lint, tests, build |
 | `AGENTS.md`, rules, skills | Instructions. Claude follows them, but nothing forces it. | everything else |
 
 If a rule keeps getting broken, move it up this table.
+
+## The project-independent tools
+
+These four work the same in every project made from this template.
+
+| Tool | Job in the loop | How agents reach it |
+|---|---|---|
+| **Sentry** | What broke, for whom, since which release | `sentry` server in `.mcp.json`; `/triage`, `/ship`, `/weekly-review` |
+| **PostHog** | Did the feature work; feature flags for gradual rollout | `posthog` server in `.mcp.json`; specs name events, `/implement` adds them, `/weekly-review` reads them |
+| **Dependabot** | Dependencies stay current without a weekly chore | `.github/dependabot.yml` opens grouped PRs every Monday; `/triage` reviews them; CI tests them; you merge |
+| **Obsidian** | Memory across projects: weekly reviews, lessons, decisions you want to keep | `/weekly-review` and `/triage` write Markdown into your vault |
+
+### Connect Sentry and PostHog to Claude
+
+After `/setup-observability`, run `/mcp` in Claude Code and sign in to `sentry` and `posthog`. Do this once per machine. In cloud sessions, the servers load from `.mcp.json` too, but they may ask you to sign in again.
+
+### Obsidian
+
+Your vault stays outside the repo, shared across all projects:
+
+```
+<your vault>/
+  Projects/<repo name>/Reviews/2026-W43.md    written by /weekly-review and /triage
+  Learnings/                                  cross-project lessons
+```
+
+Point Claude at it once per machine, in `~/.claude/settings.json` (merge with what's there):
+
+```json
+{
+  "env": { "OBSIDIAN_VAULT": "/Users/you/Obsidian/Brain" },
+  "permissions": { "additionalDirectories": ["/Users/you/Obsidian/Brain"] }
+}
+```
+
+Claude writes plain Markdown files, so the Obsidian app doesn't need to be open. In a cloud session the vault isn't reachable, so the review goes to `docs/reviews/` in the repo instead.
+
+The repo's own knowledge (`CONTEXT.md`, `docs/adr/`, specs) stays in the repo, because agents need it in every session, cloud included. To browse it in Obsidian too, symlink the repo's `docs/` folder into `Projects/<repo name>/`.
+
+### Run triage and reviews on a schedule
+
+`/triage` every weekday morning and `/weekly-review` every Monday work well as scheduled tasks. Ask Claude to set them up; each run starts fresh and posts its report.
 
 ## Adding project knowledge
 

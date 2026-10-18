@@ -29,7 +29,8 @@ Write bodies to a temporary file and pass `--body-file`; long bodies passed inli
 | `blocked` | Waiting on another issue. |
 | `needs-human` | Needs a product or architecture decision before work continues. Say what decision in a comment. |
 | `critical` | Touches a critical area in `AGENTS.md`. Gets invariants up front and both specialist reviewers. |
-| `bug` | Something broken. Starts with a failing regression test. |
+| `bug` | Something broken. Starts with a failing regression test. `/triage` creates these from Sentry. |
+| `dependencies` | Dependabot PRs. `/triage` reviews them; the user merges. |
 
 `scripts/setup.sh` creates these labels.
 

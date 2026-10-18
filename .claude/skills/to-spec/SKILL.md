@@ -64,6 +64,16 @@ A list of testing decisions that were made. Include:
 - Which modules will be tested
 - Prior art for the tests (i.e. similar types of tests in the codebase)
 
+## Success Metrics
+
+How we will know, after release, that this feature worked. The weekly review reads this section.
+
+- The question the feature should answer ("do members who search book more often?") and the metric that answers it.
+- The analytics events it needs, named `object_verb` in past tense, with where each fires (client or server) and its properties. Reuse events from `docs/analytics/tracking-plan.md` where they exist.
+- The feature flag key, if the feature rolls out gradually, and the rollout plan.
+
+If the project has no analytics yet, write the metric anyway and note that instrumentation waits for `/setup-observability`.
+
 ## Critical Invariants
 
 Include this section only when the feature touches a critical area listed in `CLAUDE.md` (auth, payments, capacity, money, sensitive data, destructive migrations). List each rule that must always hold, who is allowed to do what, and what happens when two requests hit the same resource at once or the same request arrives twice. Say where each invariant is enforced (database constraint, transaction, server check). A rule enforced only in the UI is not enforced.

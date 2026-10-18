@@ -39,3 +39,6 @@ CLAUDE.local.md
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Obsidian, if the repo or docs/ is opened as a vault
+.obsidian/
