@@ -7,7 +7,7 @@ A Next.js starter with an AI development workflow built in. Claude Code shapes i
 ## See the loop
 
 - **On GitHub:** the diagram at the top of [`WORKFLOW.md`](WORKFLOW.md#the-loop) shows every step, who acts and where work loops back.
-- **In 3D:** open [`docs/workflow/loop.html`](docs/workflow/loop.html) in a browser (download it or clone the repo, then double-click it). Follow one feature from idea to production and back, and click any step or tool for details.
+- **In 3D:** [gedewon.github.io/solo-dev-product-template](https://gedewon.github.io/solo-dev-product-template/), published from [`docs/workflow/loop.html`](docs/workflow/loop.html) by `.github/workflows/pages.yml` whenever that file changes on `main`. Follow one feature from idea to production and back, and click any step or tool for details. You can also open the file straight from a clone.
 
 ## Start a new project
 

@@ -42,7 +42,7 @@ flowchart TB
     linkStyle 8,14 stroke:#d9574a,stroke-width:2px
 ```
 
-To explore the same loop in 3D, open [`docs/workflow/loop.html`](docs/workflow/loop.html) in a browser: download it or clone the repo, then double-click it. A packet tours every step, and a side panel explains who acts, what goes in and out, and what is enforced. The toggles show what changes for a critical change and when review finds a problem.
+To explore the same loop in 3D, open the [live map](https://gedewon.github.io/solo-dev-product-template/), or open [`docs/workflow/loop.html`](docs/workflow/loop.html) from a clone. A packet tours every step, and a side panel explains who acts, what goes in and out, and what is enforced. The toggles show what changes for a critical change and when review finds a problem.
 
 Every spec says how success will be measured. `/implement` adds the events. `/weekly-review` reads them back a week later and asks whether it worked. That is what turns a build pipeline into a product loop.
 
