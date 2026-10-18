@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-DEFAULT_KIT_SOURCE="https://github.com/gedewon/ai-product-template.git"
+DEFAULT_KIT_SOURCE="https://github.com/gedewon/solo-dev-product-template.git"
 
 main() {
   local dry_run=0 source=""

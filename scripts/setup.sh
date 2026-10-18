@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-KIT_SOURCE="${KIT_SOURCE:-https://github.com/gedewon/ai-product-template.git}"
+KIT_SOURCE="${KIT_SOURCE:-https://github.com/gedewon/solo-dev-product-template.git}"
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$root"

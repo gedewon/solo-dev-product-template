@@ -1,4 +1,4 @@
-# AI product template
+# Solo dev product template
 
 A Next.js starter with an AI development workflow built in. Claude Code shapes ideas into specs, slices specs into tickets, builds each ticket test-first in its own worktree, reviews its own work on three axes, and opens a pull request. You make the product decisions and merge.
 
@@ -70,7 +70,7 @@ The kit is the set of files listed in `.claude/kit-manifest.txt`.
 - **Pull it into a project.** In the project, run `scripts/sync-kit.sh --dry-run`, then `scripts/sync-kit.sh`, review the diff, and commit. The script records the source and commit in `.claude/kit-version`.
 - **Adopt it in an existing repo.** Copy `scripts/sync-kit.sh` into that repo and run it with this template's path or URL as the argument. `replace` files are written; `seed` files are added only where missing. Then remove the repo's older duplicates of the same workflows, and make sure its `CLAUDE.md` imports `AGENTS.md`.
 
-If your template repo isn't `github.com/gedewon/ai-product-template`, change `DEFAULT_KIT_SOURCE` in `scripts/sync-kit.sh` and `KIT_SOURCE` in `scripts/setup.sh`.
+If your template repo isn't `github.com/gedewon/solo-dev-product-template`, change `DEFAULT_KIT_SOURCE` in `scripts/sync-kit.sh` and `KIT_SOURCE` in `scripts/setup.sh`.
 
 ## Rewritten reference files
 
