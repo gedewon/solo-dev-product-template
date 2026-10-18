@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Components use only the semantic utilities generated from
+ * these (bg-surface, text-fg-muted), never raw colour values, so one class
+ * works in both themes and a rebrand touches this file only.
+ *
+ * Two layers: @theme maps Tailwind names onto --app-* runtime variables, and
+ * the --app-* variables change per theme. Keeping the names different avoids
+ * a variable that refers to itself.
+ *
+ * Theme switch: data-theme on <html>. Light is :root, dark is opt-in.
+ */
+@theme {
+  --color-surface: var(--app-surface);
+  --color-surface-raised: var(--app-surface-raised);
+  --color-fg: var(--app-fg);
+  --color-fg-muted: var(--app-fg-muted);
+  --color-border: var(--app-border);
+  --color-accent: var(--app-accent);
+  --color-on-accent: var(--app-on-accent);
+}
+
+:root {
+  --app-surface: #ffffff;
+  --app-surface-raised: #f6f6f7;
+  --app-fg: #111113;
+  --app-fg-muted: #5c5c66;
+  --app-border: #e4e4e7;
+  --app-accent: #2f54eb;
+  --app-on-accent: #ffffff;
+}
+
+[data-theme="dark"] {
+  --app-surface: #0f0f11;
+  --app-surface-raised: #1a1a1d;
+  --app-fg: #f4f4f5;
+  --app-fg-muted: #a1a1aa;
+  --app-border: #2a2a2e;
+  --app-accent: #6f8bff;
+  --app-on-accent: #0f0f11;
+}

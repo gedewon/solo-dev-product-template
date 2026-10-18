@@ -1,0 +1,42 @@
+# Files owned by the agent kit. scripts/sync-kit.sh reads this list from the
+# template it syncs from.
+#
+#   replace   overwritten on every sync; don't edit these in a project
+#   seed      copied only if the project doesn't have the file yet;
+#             after that the project owns it
+#
+# Paths ending in / are directories and are copied whole.
+
+replace .claude/skills/code-review/
+replace .claude/skills/codebase-design/
+replace .claude/skills/db-review/
+replace .claude/skills/domain-modeling/
+replace .claude/skills/grill-with-docs/
+replace .claude/skills/grilling/
+replace .claude/skills/implement/
+replace .claude/skills/improve-codebase-architecture/
+replace .claude/skills/security/
+replace .claude/skills/ship/
+replace .claude/skills/tdd/
+replace .claude/skills/to-spec/
+replace .claude/skills/to-tickets/
+replace .claude/skills/unslop/
+replace .claude/skills/verify/
+replace .claude/agents/security-reviewer.md
+replace .claude/agents/database-reviewer.md
+replace .claude/hooks/protect-files.mjs
+replace .claude/rules/git.md
+replace .claude/rules/architecture.md
+replace .claude/rules/typescript.md
+replace .claude/rules/nextjs.md
+replace .claude/rules/security.md
+replace .claude/rules/supabase.md
+replace .claude/rules/testing.md
+replace .claude/kit-manifest.txt
+replace WORKFLOW.md
+replace scripts/sync-kit.sh
+
+seed .claude/settings.json
+seed docs/agents/issue-tracker.md
+seed .github/pull_request_template.md
+seed .github/workflows/ci.yml

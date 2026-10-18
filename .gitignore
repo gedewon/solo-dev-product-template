@@ -1,0 +1,41 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+.pnpm-debug.log*
+
+# env files: real values never get committed, the example does
+.env*
+!.env.example
+
+# local tickets and scratch work from /to-tickets (local tracker mode)
+/.scratch/
+
+# Claude Code personal settings
+.claude/settings.local.json
+.claude/worktrees/
+CLAUDE.local.md
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
