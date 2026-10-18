@@ -6,6 +6,7 @@
       "Bash(pnpm dev)",
       "Bash(pnpm check)",
       "Bash(pnpm check:full)",
+      "Bash(pnpm check:kit)",
       "Bash(pnpm typecheck)",
       "Bash(pnpm lint *)",
       "Bash(pnpm test *)",

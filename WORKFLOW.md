@@ -44,7 +44,7 @@ flowchart TB
 
 To explore the same loop in 3D, open the [live map](https://gedewon.github.io/solo-dev-product-template/), or open [`docs/workflow/loop.html`](docs/workflow/loop.html) from a clone. A packet tours every step, and a side panel explains who acts, what goes in and out, and what is enforced. The toggles show what changes for a critical change and when review finds a problem.
 
-Every spec says how success will be measured. `/implement` adds the events. `/weekly-review` reads them back a week later and asks whether it worked. That is what turns a build pipeline into a product loop.
+Every spec names the metric that will show whether the feature worked. `/implement` adds the analytics events behind that metric, and `/weekly-review` checks it a week after release.
 
 ## Commands
 
@@ -82,7 +82,7 @@ It will stop for:
 - a plan or a set of invariants it needs you to confirm
 - destructive migrations, production data, authentication or payment behaviour, major new dependencies, and architecture that is hard to reverse
 
-Answer these on purpose. They are the decisions that are yours.
+Answer these yourself. They are product and architecture decisions, and they stay with you.
 
 It will not stop to ask whether to push or open a PR; that is the agreed default.
 
@@ -96,18 +96,18 @@ It will not stop to ask whether to push or open a PR; that is the agreed default
 | CI (`.github/workflows/ci.yml`) | Enforced on every PR | typecheck, lint, tests, build |
 | `AGENTS.md`, rules, skills | Instructions. Claude follows them, but nothing forces it. | everything else |
 
-If a rule keeps getting broken, move it up this table.
+If Claude keeps breaking a rule, enforce it instead: add it to the hook, the denied commands or CI.
 
-## The project-independent tools
+## Tools every project uses
 
-These four work the same in every project made from this template.
+These four tools work the same way in every project made from this template.
 
 | Tool | Job in the loop | How agents reach it |
 |---|---|---|
-| **Sentry** | What broke, for whom, since which release | `sentry` server in `.mcp.json`; `/triage`, `/ship`, `/weekly-review` |
-| **PostHog** | Did the feature work; feature flags for gradual rollout | `posthog` server in `.mcp.json`; specs name events, `/implement` adds them, `/weekly-review` reads them |
-| **Dependabot** | Dependencies stay current without a weekly chore | `.github/dependabot.yml` opens grouped PRs every Monday; `/triage` reviews them; CI tests them; you merge |
-| **Obsidian** | Memory across projects: weekly reviews, lessons, decisions you want to keep | `/weekly-review` and `/triage` write Markdown into your vault |
+| Sentry | What broke, for whom, since which release | `sentry` server in `.mcp.json`; `/triage`, `/ship`, `/weekly-review` |
+| PostHog | Did the feature work; feature flags for gradual rollout | `posthog` server in `.mcp.json`; specs name events, `/implement` adds them, `/weekly-review` reads them |
+| Dependabot | Dependencies stay current without a weekly chore | `.github/dependabot.yml` opens grouped PRs every Monday; `/triage` reviews them; CI tests them; you merge |
+| Obsidian | Notes that carry across projects: weekly reviews, lessons, decisions you want to keep | `/weekly-review` and `/triage` write Markdown into your vault |
 
 ### Connect Sentry and PostHog to Claude
 
@@ -142,17 +142,17 @@ The repo's own knowledge (`CONTEXT.md`, `docs/adr/`, specs) stays in the repo, b
 
 ## Adding project knowledge
 
-- **Domain words**: let `domain-modeling` record them in `CONTEXT.md` during grilling, or ask Claude to add one.
-- **A complex domain** (bookings, billing): create `.claude/skills/<domain>-domain/SKILL.md` with a `name`, a `description` saying when to use it, the entities, the invariants and the edge cases. Keep the invariants in `AGENTS.md` too, so they are always loaded.
-- **A rule for one part of the code**: add a file to `.claude/rules/` with `paths:` frontmatter so it loads only when those files are touched.
+- The `domain-modeling` skill records domain words in `CONTEXT.md` during grilling. You can also ask Claude to add one.
+- For a complex domain such as bookings or billing, create `.claude/skills/<domain>-domain/SKILL.md`. Give it a `name`, a `description` that says when to use it, and the domain's entities, invariants and edge cases. Keep the invariants in `AGENTS.md` too, so Claude reads them in every session.
+- For a rule that matters in only part of the code, add a file to `.claude/rules/` with a `paths:` list in its frontmatter. Claude loads it only when it touches those files.
 
 ## Keeping the kit up to date
 
-The skills, agents, hooks and shared rules come from the template repo. To pull improvements into this project:
+The skills, agents, hooks and shared rules come from the template repo. To pull its latest version into this project, run:
 
 ```bash
 scripts/sync-kit.sh --dry-run   # see what would change
 scripts/sync-kit.sh             # apply, then review with git diff
 ```
 
-Improve the kit in the template repo, not here, so every project gets the fix.
+Make kit changes in the template repo, not here, so every project gets them.

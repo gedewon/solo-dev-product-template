@@ -33,6 +33,9 @@ jobs:
           fi
 
       # Separate steps so a failure names the check that broke.
+      - name: Kit consistency
+        run: pnpm check:kit
+
       - name: Typecheck
         run: pnpm typecheck
 
