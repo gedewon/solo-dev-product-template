@@ -1,0 +1,47 @@
+# Publishes docs/workflow/loop.html (the 3D map of the agent loop) to GitHub
+# Pages. Runs only in the template repo itself, so projects created from the
+# template don't get a failing workflow. Needs Settings → Pages → Source set to
+# "GitHub Actions" once.
+name: Workflow map (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/workflow/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'gedewon/solo-dev-product-template'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the site
+        run: |
+          mkdir -p _site
+          cp docs/workflow/loop.html _site/index.html
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
