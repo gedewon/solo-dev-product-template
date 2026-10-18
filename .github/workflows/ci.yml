@@ -20,8 +20,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
+          # Caching keys off the lockfile, so it only switches on once one is committed.
+          cache: ${{ hashFiles('pnpm-lock.yaml') != '' && 'pnpm' || '' }}
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "::warning title=No lockfile::pnpm-lock.yaml is missing, so CI resolves the newest allowed versions on every run. Run 'pnpm install' locally and commit pnpm-lock.yaml."
+            pnpm install --no-frozen-lockfile
+          fi
 
-      - run: pnpm check:full
+      # Separate steps so a failure names the check that broke.
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
